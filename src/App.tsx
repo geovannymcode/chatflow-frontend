@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
-import { ChatPage } from './pages/ChatPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { NotFoundPage } from './pages/NotFoundPage';
+import { LoginPage } from '@/pages/LoginPage';
+import { RegisterPage } from '@/pages/RegisterPage';
+import { ChatPage } from '@/pages/ChatPage';
+import { SettingsPage } from '@/pages/SettingsPage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 
 function App() {
   const initialize = useAuthStore((state) => state.initialize);

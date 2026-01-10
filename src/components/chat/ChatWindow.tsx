@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { useChat } from '../hooks/useChat';
+import { useChat } from '@/hooks/useChat';
 import { useAuthStore } from '../../stores/authStore';
 import { ChatHeader } from './ChatHeader';
 import { MessageList } from './MessageList';
