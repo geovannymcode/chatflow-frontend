@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
-import { config } from '@/config/env';
-import { storage } from '@/lib/storage';
+import { config } from '../config/env';
+import { storage } from '../lib/storage';
 
 // Create axios instance
 export const api = axios.create({
