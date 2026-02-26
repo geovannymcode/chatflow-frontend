@@ -8,6 +8,17 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api/auth':         { target: 'http://localhost:8080', changeOrigin: true },
+      '/api/users':        { target: 'http://localhost:8080', changeOrigin: true },
+      '/api/chat':         { target: 'http://localhost:8081', changeOrigin: true },
+      '/api/messages':     { target: 'http://localhost:8081', changeOrigin: true },
+      '/api/participants': { target: 'http://localhost:8081', changeOrigin: true },
+      '/api/device-tokens':{ target: 'http://localhost:8082', changeOrigin: true },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
