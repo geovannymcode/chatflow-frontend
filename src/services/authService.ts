@@ -27,7 +27,8 @@ export const authService = {
   },
 
   async verifyEmail(token: string): Promise<void> {
-    await api.post(`/auth/verify-email?token=${token}`);
+    // Backend: GET /api/auth/verify?token=
+    await api.get(`/auth/verify?token=${token}`);
   },
 
   async requestPasswordReset(email: string): Promise<void> {

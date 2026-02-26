@@ -1,59 +1,87 @@
 import api from '@/lib/api';
-import type { Message, PaginatedResponse, SendMessageRequest } from '@/types';
+import type { Message } from '@/types';
+
+// Backend returns plain List<ChatMessageDto>, not a paginated Spring Page.
+// We wrap in a PaginatedResponse-shaped object so messageStore keeps working.
+interface WrappedList<T> {
+  content: T[];
+  last: boolean;
+}
+
+// Backend ChatMessageDto has sender as nested object; frontend Message uses flat fields
+function mapBackendMessage(raw: any): Message {
+  return {
+    id: raw.id,
+    chatId: raw.chatId,
+    senderId: raw.sender?.userId ?? raw.senderId,
+    senderName: raw.sender?.username ?? raw.senderName ?? null,
+    content: raw.content,
+    type: raw.type ?? 'TEXT',
+    replyToId: raw.replyToId ?? null,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt ?? null,
+    isDeleted: raw.isDeleted ?? false,
+    isEdited: raw.isEdited ?? false,
+  };
+}
 
 export const messageService = {
+  // GET /api/chat/{chatId}/messages?before=<ISO>&pageSize=<n>
+  // Returns List<ChatMessageDto> (plain array)
   async getMessages(
     chatId: string,
-    page = 0,
-    size = 50
-  ): Promise<PaginatedResponse<Message>> {
-    const response = await api.get<PaginatedResponse<Message>>(
-      `/chats/${chatId}/messages`,
-      { params: { page, size } }
-    );
-    return response.data;
+    _page = 0,
+    pageSize = 50
+  ): Promise<WrappedList<Message>> {
+    const response = await api.get<any[]>(`/chat/${chatId}/messages`, {
+      params: { pageSize },
+    });
+    const data = response.data.map(mapBackendMessage);
+    return {
+      content: data,
+      last: data.length < pageSize,
+    };
   },
 
+  // Load messages before a given timestamp (cursor-based paging)
   async getMessagesBefore(
     chatId: string,
     before: string,
     size = 50
   ): Promise<Message[]> {
-    const response = await api.get<Message[]>(
-      `/chats/${chatId}/messages/before`,
-      { params: { before, size } }
-    );
-    return response.data;
+    const response = await api.get<any[]>(`/chat/${chatId}/messages`, {
+      params: { before, pageSize: size },
+    });
+    return response.data.map(mapBackendMessage);
   },
 
+  // Messages are sent via WebSocket (useChatSubscription.sendMessage).
+  // This REST fallback should not be used in normal flow.
   async sendMessage(
-    chatId: string,
-    request: SendMessageRequest
+    _chatId: string,
+    _request: { content: string }
   ): Promise<Message> {
-    const response = await api.post<Message>(
-      `/chats/${chatId}/messages`,
-      request
+    throw new Error(
+      'Use the WebSocket hook (useChatSubscription) to send messages.'
     );
-    return response.data;
   },
 
+  // DELETE /api/messages/{messageId}
+  async deleteMessage(_chatId: string, messageId: string): Promise<void> {
+    await api.delete(`/messages/${messageId}`);
+  },
+
+  // Not supported by backend — stub
   async editMessage(
-    chatId: string,
-    messageId: string,
-    content: string
+    _chatId: string,
+    _messageId: string,
+    _content: string
   ): Promise<Message> {
-    const response = await api.patch<Message>(
-      `/chats/${chatId}/messages/${messageId}`,
-      { content }
-    );
-    return response.data;
+    throw new Error('Edit message is not supported by the backend.');
   },
 
-  async deleteMessage(chatId: string, messageId: string): Promise<void> {
-    await api.delete(`/chats/${chatId}/messages/${messageId}`);
-  },
-
-  async markAsRead(chatId: string, lastReadMessageId: string): Promise<void> {
-    await api.post(`/chats/${chatId}/messages/read`, { lastReadMessageId });
+  // Not supported by backend — no-op
+  async markAsRead(_chatId: string, _lastReadMessageId: string): Promise<void> {
+    // TODO: not implemented on the backend
   },
 };
