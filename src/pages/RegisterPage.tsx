@@ -9,7 +9,7 @@ import { Button, Input } from '@/components/ui';
 import { config } from '@/config/env';
 
 const registerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  username: z.string().min(3, 'Username must be at least 3 characters').max(20, 'Username must be at most 20 characters'),
   email: z.string().email('Invalid email address'),
   password: z
     .string()
@@ -45,7 +45,7 @@ export function RegisterPage() {
     try {
       clearError();
       await registerUser({
-        name: data.name,
+        username: data.username,
         email: data.email,
         password: data.password,
       });
@@ -100,10 +100,10 @@ export function RegisterPage() {
             )}
 
             <Input
-              label="Full Name"
-              placeholder="John Doe"
-              error={errors.name?.message}
-              {...register('name')}
+              label="Username"
+              placeholder="johndoe"
+              error={errors.username?.message}
+              {...register('username')}
             />
 
             <Input
