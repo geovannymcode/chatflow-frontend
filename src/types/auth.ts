@@ -5,18 +5,18 @@ export interface LoginRequest {
 
 export interface RegisterRequest {
   email: string;
+  username: string;
   password: string;
-  name?: string;
 }
 
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  expiresIn: number;
   user: {
     id: string;
     email: string;
-    name: string | null;
+    username: string;
+    hasVerifiedEmail: boolean;
   };
 }
 

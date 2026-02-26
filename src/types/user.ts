@@ -1,10 +1,10 @@
 export interface User {
   id: string;
   email: string;
-  name: string | null;
-  avatarUrl: string | null;
-  createdAt: string;
-  isVerified: boolean;
+  username: string;
+  hasVerifiedEmail: boolean;
+  avatarUrl?: string | null;
+  createdAt?: string;
 }
 
 export interface UserProfile extends User {
