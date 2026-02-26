@@ -74,10 +74,10 @@ export function Sidebar() {
       {/* User Profile */}
       <div className="border-t p-4">
         <div className="flex items-center gap-3">
-          <Avatar name={user?.name} size="md" />
+          <Avatar name={user?.username} size="md" />
           <div className="flex-1 min-w-0">
             <p className="font-medium text-gray-900 truncate">
-              {user?.name || user?.email}
+              {user?.username || user?.email}
             </p>
             <p className="text-xs text-gray-500 truncate">{user?.email}</p>
           </div>
