@@ -43,7 +43,7 @@ export function ChatPage() {
   }, [selectedChatId, fetchMessages]);
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-surface-900">
       {/* Sidebar with chat list */}
       <Sidebar />
 
@@ -58,7 +58,7 @@ export function ChatPage() {
 
       {/* Connection status indicator */}
       {!isConnected && (
-        <div className="fixed bottom-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-lg">
+        <div className="fixed bottom-4 right-4 bg-amber-600 text-white px-4 py-2 rounded-lg shadow-lg">
           Reconnecting...
         </div>
       )}

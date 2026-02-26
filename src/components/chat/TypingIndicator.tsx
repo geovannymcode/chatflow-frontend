@@ -16,12 +16,12 @@ export function TypingIndicator({ userIds, className }: TypingIndicatorProps) {
 
   return (
     <div className={cn('px-4 py-2', className)}>
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-surface-300">
         {/* Animated dots */}
         <div className="flex gap-1">
-          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+          <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+          <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+          <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" />
         </div>
         <span>{text}...</span>
       </div>

@@ -39,14 +39,14 @@ export function Avatar({
           src={src}
           alt={name || 'Avatar'}
           className={cn(
-            'rounded-full object-cover bg-gray-200',
+            'rounded-full object-cover bg-surface-600',
             sizes[size]
           )}
         />
       ) : (
         <div
           className={cn(
-            'rounded-full bg-primary-100 text-primary-700 font-medium',
+            'rounded-full bg-primary-900 text-primary-300 font-medium',
             'flex items-center justify-center',
             sizes[size]
           )}
@@ -58,8 +58,8 @@ export function Avatar({
       {isOnline !== undefined && (
         <span
           className={cn(
-            'absolute bottom-0 right-0 rounded-full border-2 border-white',
-            isOnline ? 'bg-green-500' : 'bg-gray-400',
+            'absolute bottom-0 right-0 rounded-full border-2 border-surface-800',
+            isOnline ? 'bg-primary-400' : 'bg-surface-400',
             statusSizes[size]
           )}
         />

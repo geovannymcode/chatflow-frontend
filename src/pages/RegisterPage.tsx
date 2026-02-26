@@ -57,15 +57,15 @@ export function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-surface-900 to-surface-800 p-4">
+        <div className="w-full max-w-md bg-surface-800 rounded-2xl shadow-xl p-8 text-center border border-surface-700">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-900 rounded-full mb-4">
+            <CheckCircle className="w-8 h-8 text-primary-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-gray-100 mb-2">
             Check your email
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-surface-300 mb-6">
             We've sent a verification link to your email address. 
             Please click the link to verify your account.
           </p>
@@ -78,22 +78,22 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-surface-900 to-surface-800 p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-500 rounded-2xl mb-4">
             <MessageSquare className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{config.appName}</h1>
-          <p className="text-gray-600 mt-1">Create your account</p>
+          <h1 className="text-2xl font-bold text-gray-100">{config.appName}</h1>
+          <p className="text-surface-300 mt-1">Create your account</p>
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-surface-800 rounded-2xl shadow-xl p-8 border border-surface-700">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
+              <div className="flex items-center gap-2 p-3 bg-red-900/30 text-red-400 rounded-lg">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <p className="text-sm">{error}</p>
               </div>
@@ -142,11 +142,11 @@ export function RegisterPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-surface-300">
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="text-primary-600 hover:text-primary-700 font-medium"
+                className="text-primary-400 hover:text-primary-300 font-medium"
               >
                 Sign in
               </Link>

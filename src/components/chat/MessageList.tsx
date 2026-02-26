@@ -43,7 +43,7 @@ export function MessageList({
     <div
       ref={listRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto px-4 py-4 space-y-4 flex flex-col-reverse scrollbar-thin"
+      className="flex-1 overflow-y-auto px-4 py-4 space-y-4 flex flex-col-reverse scrollbar-thin bg-surface-900"
     >
       {/* Loading indicator at top */}
       {isLoading && (
@@ -59,7 +59,7 @@ export function MessageList({
           <div key={date} className="space-y-2">
             {/* Date separator */}
             <div className="flex items-center justify-center my-4">
-              <span className="px-3 py-1 text-xs text-gray-500 bg-gray-100 rounded-full">
+              <span className="px-3 py-1 text-xs text-surface-200 bg-surface-700 rounded-full">
                 {date}
               </span>
             </div>

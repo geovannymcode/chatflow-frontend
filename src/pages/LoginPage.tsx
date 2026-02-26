@@ -43,22 +43,22 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-surface-900 to-surface-800 p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-500 rounded-2xl mb-4">
             <MessageSquare className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{config.appName}</h1>
-          <p className="text-gray-600 mt-1">Sign in to your account</p>
+          <h1 className="text-2xl font-bold text-gray-100">{config.appName}</h1>
+          <p className="text-surface-300 mt-1">Sign in to your account</p>
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-surface-800 rounded-2xl shadow-xl p-8 border border-surface-700">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
+              <div className="flex items-center gap-2 p-3 bg-red-900/30 text-red-400 rounded-lg">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <p className="text-sm">{error}</p>
               </div>
@@ -84,13 +84,13 @@ export function LoginPage() {
               <label className="flex items-center">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  className="w-4 h-4 text-primary-500 border-surface-600 bg-surface-700 rounded focus:ring-primary-500"
                 />
-                <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                <span className="ml-2 text-sm text-surface-300">Remember me</span>
               </label>
               <Link
                 to="/forgot-password"
-                className="text-sm text-primary-600 hover:text-primary-700"
+                className="text-sm text-primary-400 hover:text-primary-300"
               >
                 Forgot password?
               </Link>
@@ -107,11 +107,11 @@ export function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-surface-300">
               Don't have an account?{' '}
               <Link
                 to="/register"
-                className="text-primary-600 hover:text-primary-700 font-medium"
+                className="text-primary-400 hover:text-primary-300 font-medium"
               >
                 Sign up
               </Link>

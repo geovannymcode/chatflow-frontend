@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Smile, Mic } from 'lucide-react';
+import { Paperclip, Smile, Mic } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 
@@ -71,12 +71,12 @@ export function MessageInput({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-end gap-2 px-4 py-3 border-t bg-white"
+      className="flex items-end gap-2 px-4 py-3 border-t border-surface-700 bg-surface-800"
     >
       {/* Attachment button */}
       <button
         type="button"
-        className="p-2 rounded-full hover:bg-gray-100 text-gray-500"
+        className="p-2 rounded-full hover:bg-surface-600 text-surface-300"
       >
         <Paperclip className="w-5 h-5" />
       </button>
@@ -92,10 +92,10 @@ export function MessageInput({
           disabled={disabled}
           rows={1}
           className={cn(
-            'w-full px-4 py-2 pr-10 rounded-2xl border border-gray-200',
-            'focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
+            'w-full px-4 py-2 pr-10 rounded-2xl border border-surface-600 bg-surface-700',
+            'text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
             'resize-none outline-none transition-colors',
-            'placeholder:text-gray-400',
+            'placeholder:text-surface-300',
             disabled && 'opacity-50 cursor-not-allowed'
           )}
         />
@@ -103,7 +103,7 @@ export function MessageInput({
         {/* Emoji button */}
         <button
           type="button"
-          className="absolute right-3 bottom-2 p-1 rounded-full hover:bg-gray-100 text-gray-500"
+          className="absolute right-3 bottom-2 p-1 rounded-full hover:bg-surface-600 text-surface-300"
         >
           <Smile className="w-5 h-5" />
         </button>
@@ -115,17 +115,17 @@ export function MessageInput({
           type="submit"
           disabled={disabled || isSending}
           className={cn(
-            'p-2 rounded-full bg-primary-600 text-white',
-            'hover:bg-primary-700 transition-colors',
+            'px-5 py-2 rounded-xl bg-surface-600 text-gray-200 font-medium',
+            'hover:bg-surface-500 transition-colors',
             'disabled:opacity-50 disabled:cursor-not-allowed'
           )}
         >
-          <Send className="w-5 h-5" />
+          Send
         </button>
       ) : (
         <button
           type="button"
-          className="p-2 rounded-full hover:bg-gray-100 text-gray-500"
+          className="p-2 rounded-full hover:bg-surface-600 text-surface-300"
         >
           <Mic className="w-5 h-5" />
         </button>

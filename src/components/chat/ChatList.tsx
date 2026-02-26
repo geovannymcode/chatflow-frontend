@@ -18,8 +18,8 @@ export function ChatList() {
 
   if (chats.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500 px-4">
-        <MessageSquare className="w-12 h-12 mb-3 text-gray-400" />
+      <div className="flex flex-col items-center justify-center h-64 text-surface-300 px-4">
+        <MessageSquare className="w-12 h-12 mb-3 text-surface-400" />
         <p className="text-center">No conversations yet</p>
         <p className="text-sm text-center mt-1">
           Start a new chat to begin messaging
@@ -42,7 +42,7 @@ export function ChatList() {
       {hasMore && (
         <button
           onClick={() => fetchMoreChats()}
-          className="w-full py-3 text-sm text-primary-600 hover:bg-gray-50"
+          className="w-full py-3 text-sm text-primary-400 hover:bg-surface-700"
         >
           Load more
         </button>

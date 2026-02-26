@@ -61,7 +61,7 @@ export function ChatWindow({ chat }: ChatWindowProps) {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-surface-900">
       {/* Header */}
       <ChatHeader chat={chat} />
 
