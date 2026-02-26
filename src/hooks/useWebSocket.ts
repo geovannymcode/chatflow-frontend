@@ -1,112 +1,26 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback } from 'react';
 import { webSocketService } from '../lib/websocket';
 import { useAuthStore } from '../stores/authStore';
 import { useMessageStore } from '../stores/messageStore';
 import { useChatStore } from '../stores/chatStore';
-import { usePresenceStore } from '../stores/presenceStore';
-import type { 
-  ChatMessage, 
-  TypingNotification, 
-  PresenceNotification,
-  MessageAck 
-} from '../types';
+import { useWsStore } from '../stores/wsStore';
 import { generateTempId } from '../lib/utils';
 
+// ---------------------------------------------------------------------------
+// useWebSocket — manages connection lifecycle
+// ---------------------------------------------------------------------------
 export function useWebSocket() {
-  const { isAuthenticated, user } = useAuthStore();
-  const [isConnected, setIsConnected] = useState(false);
-  const subscriptionsRef = useRef<string[]>([]);
+  const { isAuthenticated } = useAuthStore();
+  const isConnected = useWsStore((s) => s.isConnected);
 
-  const { addMessage } = useMessageStore();
-  const { updateChatPreview, incrementUnread, selectedChatId } = useChatStore();
-  const { updatePresence, setTyping } = usePresenceStore();
-
-  // Connect when authenticated
+  // Connect / disconnect based on auth state
   useEffect(() => {
     if (isAuthenticated) {
       webSocketService.connect();
     } else {
       webSocketService.disconnect();
     }
-
-    return () => {
-      webSocketService.disconnect();
-    };
   }, [isAuthenticated]);
-
-  // Handle connection events
-  useEffect(() => {
-    const handleConnect = () => setIsConnected(true);
-    const handleDisconnect = () => setIsConnected(false);
-
-    webSocketService.onConnect(handleConnect);
-    webSocketService.onDisconnect(handleDisconnect);
-
-    return () => {
-      webSocketService.removeConnectHandler(handleConnect);
-      webSocketService.removeDisconnectHandler(handleDisconnect);
-    };
-  }, []);
-
-  // Subscribe to presence updates
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const subId = webSocketService.subscribe(
-      '/topic/presence',
-      (notification: PresenceNotification) => {
-        updatePresence(notification);
-      }
-    );
-
-    subscriptionsRef.current.push(subId);
-
-    return () => {
-      webSocketService.unsubscribe(subId);
-      subscriptionsRef.current = subscriptionsRef.current.filter((id) => id !== subId);
-    };
-  }, [isConnected, updatePresence]);
-
-  // Subscribe to user-specific queues
-  useEffect(() => {
-    if (!isConnected || !user) return;
-
-    // Subscribe to message ACKs
-    const ackSubId = webSocketService.subscribe(
-      `/user/queue/acks`,
-      (ack: MessageAck) => {
-        console.log('Message ACK received:', ack);
-        // Handle ACK if needed
-      }
-    );
-
-    // Subscribe to typing notifications
-    const typingSubId = webSocketService.subscribe(
-      `/user/queue/typing`,
-      (notification: TypingNotification) => {
-        setTyping(notification);
-      }
-    );
-
-    // Subscribe to errors
-    const errorSubId = webSocketService.subscribe(
-      `/user/queue/errors`,
-      (error: any) => {
-        console.error('WebSocket error:', error);
-      }
-    );
-
-    subscriptionsRef.current.push(ackSubId, typingSubId, errorSubId);
-
-    return () => {
-      [ackSubId, typingSubId, errorSubId].forEach((id) => {
-        webSocketService.unsubscribe(id);
-      });
-      subscriptionsRef.current = subscriptionsRef.current.filter(
-        (id) => ![ackSubId, typingSubId, errorSubId].includes(id)
-      );
-    };
-  }, [isConnected, user, setTyping]);
 
   return {
     isConnected,
@@ -116,84 +30,80 @@ export function useWebSocket() {
   };
 }
 
-// Hook for chat-specific subscriptions
+// ---------------------------------------------------------------------------
+// useChatSubscription — handles messages for a specific chat window
+// ---------------------------------------------------------------------------
 export function useChatSubscription(chatId: string | null) {
   const { addMessage } = useMessageStore();
   const { updateChatPreview, incrementUnread, selectedChatId } = useChatStore();
-  const { setTyping } = usePresenceStore();
   const { isConnected, subscribe, unsubscribe, send } = useWebSocket();
 
-  // Subscribe to chat messages
+  // Subscribe to NEW_MESSAGE and MESSAGE_DELETED events from the server
   useEffect(() => {
     if (!isConnected || !chatId) return;
 
-    const messageSubId = subscribe(
-      `/topic/chat/${chatId}`,
-      (message: ChatMessage) => {
-        addMessage(message);
-        updateChatPreview(chatId, message.content, message.createdAt);
-        
-        // Increment unread if not the selected chat
-        if (selectedChatId !== chatId) {
-          incrementUnread(chatId);
-        }
-      }
-    );
+    const newMsgId = subscribe('NEW_MESSAGE', (raw: any) => {
+      // The server broadcasts to all sessions; filter by chatId
+      if (String(raw.chatId) !== String(chatId)) return;
 
-    const readSubId = subscribe(
-      `/topic/chat/${chatId}/read`,
-      (notification: any) => {
-        console.log('Read receipt:', notification);
+      // Map backend ChatMessage (sender object) → frontend ChatMessage (flat fields)
+      const message = {
+        id: raw.id,
+        chatId: raw.chatId,
+        senderId: raw.sender?.userId ?? raw.senderId,
+        senderName: raw.sender?.username ?? raw.senderName ?? null,
+        content: raw.content,
+        type: raw.type ?? 'TEXT',
+        replyToId: raw.replyToId ?? null,
+        replyToPreview: raw.replyToPreview ?? null,
+        createdAt: raw.createdAt,
+        isEdited: raw.isEdited ?? false,
+        tempId: raw.tempId,
+      };
+
+      addMessage(message);
+      updateChatPreview(chatId, message.content, message.createdAt);
+      if (selectedChatId !== chatId) {
+        incrementUnread(chatId);
       }
-    );
+    });
+
+    const delMsgId = subscribe('MESSAGE_DELETED', (payload: any) => {
+      if (String(payload.chatId) !== String(chatId)) return;
+      console.log('[WS] MESSAGE_DELETED', payload);
+    });
 
     return () => {
-      unsubscribe(messageSubId);
-      unsubscribe(readSubId);
+      unsubscribe(newMsgId);
+      unsubscribe(delMsgId);
     };
   }, [isConnected, chatId, selectedChatId, addMessage, updateChatPreview, incrementUnread, subscribe, unsubscribe]);
 
-  // Send message
+  // Send a new message via WebSocket
   const sendMessage = useCallback(
-    (content: string, type: string = 'TEXT', replyToId?: string) => {
-      if (!chatId || !isConnected) return;
-
+    (content: string) => {
+      if (!chatId) return;
       const tempId = generateTempId();
-
-      send(`/app/chat/${chatId}/send`, {
-        content,
-        type,
-        replyToId,
-        tempId,
-      });
-
+      send('NEW_MESSAGE', { chatId, content });
       return tempId;
     },
-    [chatId, isConnected, send]
+    [chatId, send]
   );
 
-  // Send typing indicator
+  // Typing indicator — not implemented on the backend yet; kept as a no-op
   const sendTyping = useCallback(
-    (isTyping: boolean) => {
-      if (!chatId || !isConnected) return;
-
-      send(`/app/chat/${chatId}/typing`, {
-        isTyping,
-      });
+    (_isTyping: boolean) => {
+      // TODO: backend does not support typing events
     },
-    [chatId, isConnected, send]
+    []
   );
 
-  // Mark as read
+  // Mark as read — not implemented on the backend yet; kept as a no-op
   const markAsRead = useCallback(
-    (lastReadMessageId: string) => {
-      if (!chatId || !isConnected) return;
-
-      send(`/app/chat/${chatId}/read`, {
-        lastReadMessageId,
-      });
+    (_lastReadMessageId: string) => {
+      // TODO: backend does not support read receipts
     },
-    [chatId, isConnected, send]
+    []
   );
 
   return {
