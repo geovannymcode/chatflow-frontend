@@ -2,7 +2,11 @@ import axios, { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } fro
 import { config } from '../config/env';
 import { storage } from '../lib/storage';
 
-// Create axios instance
+const _rawAxios = axios.create({ baseURL: config.apiUrl, timeout: 10000 });
+
+// ---------------------------------------------------------------------------
+// Main axios instance
+// ---------------------------------------------------------------------------
 export const api = axios.create({
   baseURL: config.apiUrl,
   timeout: 30000,
@@ -11,68 +15,54 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor - add auth token
+// Request interceptor — add Bearer token
 api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  (reqConfig: InternalAxiosRequestConfig) => {
     const token = storage.getAccessToken();
-    
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (token && reqConfig.headers) {
+      reqConfig.headers.Authorization = `Bearer ${token}`;
     }
-    
-    return config;
+    return reqConfig;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle errors and token refresh
+// Response interceptor — handle errors and transparent token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-    // Handle 401 Unauthorized - try to refresh token
+    // Handle 401 Unauthorized — try to refresh the access token once
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
         const refreshToken = storage.getRefreshToken();
-        
-        if (!refreshToken) {
-          throw new Error('No refresh token');
-        }
+        if (!refreshToken) throw new Error('No refresh token');
 
-        // Call refresh endpoint
-        const response = await axios.post(`${config.apiUrl}/auth/refresh`, {
-          refreshToken,
-        });
+        const response = await _rawAxios.post('/auth/refresh', { refreshToken });
 
         const { accessToken, refreshToken: newRefreshToken } = response.data;
-
-        // Store new tokens
         storage.setAccessToken(accessToken);
         storage.setRefreshToken(newRefreshToken);
 
-        // Retry original request
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         }
 
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed - logout user
-        storage.clearAuth();
-        window.location.href = '/login';
+        // Import dynamically to avoid circular deps
+        const { useAuthStore } = await import('../stores/authStore');
+        useAuthStore.getState().logout();
         return Promise.reject(refreshError);
       }
     }
 
-    // Handle other errors
-    const errorMessage = extractErrorMessage(error);
-    
     return Promise.reject({
       status: error.response?.status,
-      message: errorMessage,
+      message: extractErrorMessage(error),
       errors: (error.response?.data as any)?.errors,
     });
   }
@@ -83,12 +73,7 @@ function extractErrorMessage(error: AxiosError): string {
     const data = error.response.data as any;
     return data.message || data.error || 'An error occurred';
   }
-  
-  if (error.message) {
-    return error.message;
-  }
-  
-  return 'Network error';
+  return error.message || 'Network error';
 }
 
 export default api;

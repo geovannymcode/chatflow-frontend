@@ -1,150 +1,138 @@
-import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import { config } from '../config/env';
 import { storage } from '../lib/storage';
+import { useWsStore } from '../stores/wsStore';
 
-type MessageHandler = (message: any) => void;
+type MessageHandler = (payload: any) => void;
 type ConnectionHandler = () => void;
 
-interface Subscription {
-  destination: string;
-  handler: MessageHandler;
-  subscription?: StompSubscription;
-}
-
 class WebSocketService {
-  private client: Client | null = null;
-  private subscriptions: Map<string, Subscription> = new Map();
+  private ws: WebSocket | null = null;
+  private _isConnected = false;
   private isConnecting = false;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 2000;
+
+  // type → list of { id, handler }
+  private handlers: Map<string, Array<{ id: string; handler: MessageHandler }>> = new Map();
 
   private onConnectHandlers: ConnectionHandler[] = [];
   private onDisconnectHandlers: ConnectionHandler[] = [];
 
+  // Simple exponential back-off reconnect
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectDelay = 2000;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 8;
+
+  // -------------------------------------------------------------------------
+  // Public API
+  // -------------------------------------------------------------------------
+
   connect(): void {
-    if (this.client?.connected || this.isConnecting) {
-      return;
-    }
+    if (this._isConnected || this.isConnecting) return;
 
     const token = storage.getAccessToken();
     if (!token) {
-      console.warn('No access token available for WebSocket connection');
+      console.warn('[WS] No access token — skipping connection');
       return;
     }
 
     this.isConnecting = true;
+    const url = `${config.wsUrl}/chat?token=${encodeURIComponent(token)}`;
+    this.ws = new WebSocket(url);
 
-    this.client = new Client({
-      webSocketFactory: () => new SockJS(`${config.wsUrl}?token=${token}`),
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
-      debug: (str) => {
-        if (import.meta.env.DEV) {
-          console.log('[STOMP]', str);
+    this.ws.onopen = () => {
+      console.log('[WS] Connected');
+      this._isConnected = true;
+      this.isConnecting = false;
+      this.reconnectAttempts = 0;
+      this.reconnectDelay = 2000;
+      this.onConnectHandlers.forEach((h) => h());
+      useWsStore.getState().setConnected(true);
+    };
+
+    this.ws.onmessage = (event: MessageEvent) => {
+      try {
+        const msg: { type: string; payload: any } = JSON.parse(event.data);
+        const list = this.handlers.get(msg.type);
+        if (list) {
+          list.forEach(({ handler }) => handler(msg.payload));
         }
-      },
-      reconnectDelay: this.reconnectDelay,
-      heartbeatIncoming: 25000,
-      heartbeatOutgoing: 25000,
-      onConnect: () => {
-        console.log('WebSocket connected');
-        this.isConnecting = false;
-        this.reconnectAttempts = 0;
-        
-        // Resubscribe to all destinations
-        this.resubscribeAll();
-        
-        // Notify handlers
-        this.onConnectHandlers.forEach((handler) => handler());
-      },
-      onDisconnect: () => {
-        console.log('WebSocket disconnected');
-        this.isConnecting = false;
-        
-        // Notify handlers
-        this.onDisconnectHandlers.forEach((handler) => handler());
-      },
-      onStompError: (frame) => {
-        console.error('STOMP error:', frame.headers.message);
-        this.isConnecting = false;
-      },
-      onWebSocketError: (event) => {
-        console.error('WebSocket error:', event);
-        this.isConnecting = false;
-      },
-    });
+      } catch (err) {
+        console.error('[WS] Failed to parse message:', err);
+      }
+    };
 
-    this.client.activate();
+    this.ws.onclose = () => {
+      console.log('[WS] Disconnected');
+      this._isConnected = false;
+      this.isConnecting = false;
+      this.onDisconnectHandlers.forEach((h) => h());
+      useWsStore.getState().setConnected(false);
+      this.scheduleReconnect();
+    };
+
+    this.ws.onerror = (err) => {
+      console.error('[WS] Error:', err);
+      this.isConnecting = false;
+    };
   }
 
   disconnect(): void {
-    if (this.client) {
-      this.client.deactivate();
-      this.client = null;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
-    this.subscriptions.clear();
+    this.reconnectAttempts = 0;
+    this.reconnectDelay = 2000;
+    if (this.ws) {
+      this.ws.onclose = null; // prevent scheduleReconnect from firing
+      this.ws.close();
+      this.ws = null;
+    }
+    const wasConnected = this._isConnected;
+    this._isConnected = false;
+    this.isConnecting = false;
+    if (wasConnected) useWsStore.getState().setConnected(false);
   }
 
-  subscribe(destination: string, handler: MessageHandler): string {
-    const subscriptionId = `${destination}_${Date.now()}`;
-    
-    const subscription: Subscription = {
-      destination,
-      handler,
-    };
-
-    this.subscriptions.set(subscriptionId, subscription);
-
-    // If connected, subscribe immediately
-    if (this.client?.connected) {
-      subscription.subscription = this.client.subscribe(
-        destination,
-        (message: IMessage) => {
-          try {
-            const body = JSON.parse(message.body);
-            handler(body);
-          } catch (error) {
-            console.error('Error parsing message:', error);
-          }
-        }
-      );
+  /**
+   * Subscribe to a message type (e.g. 'NEW_MESSAGE', 'MESSAGE_DELETED').
+   * Returns a subscription ID that can be passed to unsubscribe().
+   */
+  subscribe(type: string, handler: MessageHandler): string {
+    const id = `${type}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    if (!this.handlers.has(type)) {
+      this.handlers.set(type, []);
     }
-
-    return subscriptionId;
+    this.handlers.get(type)!.push({ id, handler });
+    return id;
   }
 
   unsubscribe(subscriptionId: string): void {
-    const subscription = this.subscriptions.get(subscriptionId);
-    
-    if (subscription?.subscription) {
-      subscription.subscription.unsubscribe();
-    }
-    
-    this.subscriptions.delete(subscriptionId);
+    this.handlers.forEach((list, type) => {
+      const idx = list.findIndex((entry) => entry.id === subscriptionId);
+      if (idx !== -1) {
+        list.splice(idx, 1);
+        if (list.length === 0) this.handlers.delete(type);
+      }
+    });
   }
 
-  send(destination: string, body: any): void {
-    if (!this.client?.connected) {
-      console.warn('WebSocket not connected, cannot send message');
+  /**
+   * Send a message to the server.
+   * @param type  - message type string (e.g. 'NEW_MESSAGE')
+   * @param payload - arbitrary payload object
+   */
+  send(type: string, payload: any): void {
+    if (!this.ws || !this._isConnected) {
+      console.warn('[WS] Not connected — cannot send message');
       return;
     }
-
-    this.client.publish({
-      destination,
-      body: JSON.stringify(body),
-    });
+    this.ws.send(JSON.stringify({ type, payload }));
   }
 
   onConnect(handler: ConnectionHandler): void {
     this.onConnectHandlers.push(handler);
-    
-    // If already connected, call immediately
-    if (this.client?.connected) {
-      handler();
-    }
+    if (this._isConnected) handler();
   }
 
   onDisconnect(handler: ConnectionHandler): void {
@@ -159,28 +147,26 @@ class WebSocketService {
     this.onDisconnectHandlers = this.onDisconnectHandlers.filter((h) => h !== handler);
   }
 
-  isConnected(): boolean {
-    return this.client?.connected || false;
+  getIsConnected(): boolean {
+    return this._isConnected;
   }
 
-  private resubscribeAll(): void {
-    if (!this.client?.connected) return;
+  // -------------------------------------------------------------------------
+  // Internal helpers
+  // -------------------------------------------------------------------------
 
-    this.subscriptions.forEach((subscription, id) => {
-      if (!subscription.subscription) {
-        subscription.subscription = this.client!.subscribe(
-          subscription.destination,
-          (message: IMessage) => {
-            try {
-              const body = JSON.parse(message.body);
-              subscription.handler(body);
-            } catch (error) {
-              console.error('Error parsing message:', error);
-            }
-          }
-        );
-      }
-    });
+  private scheduleReconnect(): void {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
+    if (this.reconnectTimer) return; // already scheduled
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.reconnectAttempts++;
+      console.log(`[WS] Reconnecting (attempt ${this.reconnectAttempts})…`);
+      this.connect();
+    }, this.reconnectDelay);
+
+    this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 30_000);
   }
 }
 

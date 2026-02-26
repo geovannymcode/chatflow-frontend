@@ -52,7 +52,7 @@ export function getInitials(name: string | null | undefined): string {
 }
 
 export function generateTempId(): string {
-  return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return crypto.randomUUID();
 }
 
 export function truncate(str: string, length: number): string {
