@@ -26,27 +26,27 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-80 flex flex-col border-r bg-white h-full">
+    <aside className="w-80 flex flex-col border-r border-surface-700 bg-surface-800 h-full">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-surface-700">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
             <MessageSquare className="w-5 h-5 text-white" />
           </div>
-          <span className="font-semibold text-gray-900">{config.appName}</span>
+          <span className="font-semibold text-gray-100">{config.appName}</span>
         </div>
         
         <div className="flex items-center gap-1">
           <button
             onClick={() => setShowNewChat(true)}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+            className="p-2 rounded-lg hover:bg-surface-600 text-gray-400"
             title="New chat"
           >
             <Plus className="w-5 h-5" />
           </button>
           <button
             onClick={() => navigate('/settings')}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+            className="p-2 rounded-lg hover:bg-surface-600 text-gray-400"
             title="Settings"
           >
             <Settings className="w-5 h-5" />
@@ -57,13 +57,13 @@ export function Sidebar() {
       {/* Search */}
       <div className="px-4 py-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-300" />
           <input
             type="text"
             placeholder="Search chats..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full pl-10 pr-4 py-2 bg-surface-700 rounded-lg text-sm text-gray-200 placeholder:text-surface-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
       </div>
@@ -72,18 +72,18 @@ export function Sidebar() {
       <ChatList />
 
       {/* User Profile */}
-      <div className="border-t p-4">
+      <div className="border-t border-surface-700 p-4">
         <div className="flex items-center gap-3">
           <Avatar name={user?.username} size="md" />
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-gray-900 truncate">
+            <p className="font-medium text-gray-100 truncate">
               {user?.username || user?.email}
             </p>
-            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+            <p className="text-xs text-surface-300 truncate">{user?.email}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+            className="p-2 rounded-lg hover:bg-surface-600 text-gray-400"
             title="Logout"
           >
             <LogOut className="w-5 h-5" />
@@ -100,36 +100,36 @@ export function Sidebar() {
       >
         <div className="space-y-4">
           <button
-            className="w-full flex items-center gap-3 p-4 rounded-lg hover:bg-gray-50 border"
+            className="w-full flex items-center gap-3 p-4 rounded-lg hover:bg-surface-600 border border-surface-600"
             onClick={() => {
               setShowNewChat(false);
               // TODO: Open user search
             }}
           >
-            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-              <MessageSquare className="w-5 h-5 text-primary-600" />
+            <div className="w-10 h-10 bg-primary-900 rounded-full flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-primary-400" />
             </div>
             <div className="text-left">
-              <p className="font-medium text-gray-900">New direct message</p>
-              <p className="text-sm text-gray-500">
+              <p className="font-medium text-gray-100">New direct message</p>
+              <p className="text-sm text-surface-300">
                 Start a conversation with someone
               </p>
             </div>
           </button>
 
           <button
-            className="w-full flex items-center gap-3 p-4 rounded-lg hover:bg-gray-50 border"
+            className="w-full flex items-center gap-3 p-4 rounded-lg hover:bg-surface-600 border border-surface-600"
             onClick={() => {
               setShowNewChat(false);
               // TODO: Open group creation
             }}
           >
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <Users className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 bg-primary-900 rounded-full flex items-center justify-center">
+              <Users className="w-5 h-5 text-primary-400" />
             </div>
             <div className="text-left">
-              <p className="font-medium text-gray-900">New group chat</p>
-              <p className="text-sm text-gray-500">
+              <p className="font-medium text-gray-100">New group chat</p>
+              <p className="text-sm text-surface-300">
                 Create a group with multiple people
               </p>
             </div>
