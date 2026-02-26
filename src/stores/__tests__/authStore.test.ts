@@ -20,8 +20,7 @@ describe('authStore', () => {
     const mockResponse = {
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
-      expiresIn: 3600,
-      user: { id: '1', email: 'test@example.com', name: 'Test' },
+      user: { id: '1', email: 'test@example.com', username: 'Test', hasVerifiedEmail: true },
     };
 
     vi.mocked(authService.login).mockResolvedValueOnce(mockResponse);

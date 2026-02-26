@@ -45,6 +45,7 @@ export const useAuthStore = create<AuthStore>()(
           
           storage.setAccessToken(response.accessToken);
           storage.setRefreshToken(response.refreshToken);
+          storage.setUser(response.user);
           
           set({
             user: response.user as User,
